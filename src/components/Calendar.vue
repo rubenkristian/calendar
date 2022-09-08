@@ -6,8 +6,8 @@
       </div>
     </div>
     <div class="calendar_content">
-      <div class="day_content" v-for="date in date_list" @click="hello">
-        <Days :dates="date"/>
+      <div class="day_content" v-for="date in date_list">
+        <Days :dates="date" @on-day-click="onSelect" @on-unselected="onUnselect"/>
       </div>
     </div>
   </div>
@@ -19,8 +19,6 @@
 
   const days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
   let date_list = reactive([]);
-  let count_week = ref(0);
-  let first_monday = ref(0);
 
   const props = defineProps({
     month: {type: Number, default: 1},
@@ -29,7 +27,7 @@
 
   const { month, year } = toRefs(props);
 
-  function updateCalendar(year, month) {
+  function updateCalendar(select_start, select_end, year, month) {
     date_list.splice(0, date_list.length);
     const today = new Date();
     const first_date_current = new Date(year, month - 1, 1);
@@ -53,27 +51,34 @@
       }
       
       week_days.push({
+        index: a,
+        date: date,
         thisMonth: date.getMonth() === month - 1,
+        isSelected: a >= select_start && a <= select_end,
         text: date.getDate(),
         today: today.getDate() === date.getDate() && today.getMonth() === date.getMonth(),
         previousDay: today.getDate() <= date.getDate() && today.getMonth() <= date.getMonth() && today.getFullYear() <= date.getFullYear(),
       })
       a++;
     }
-    
+
     date_list.push(week_days)
   }
 
   onMounted(() => {
-    updateCalendar(year.value, month.value)
+    updateCalendar(-1, -1, year.value, month.value)
   })
 
   watch(month, async (nMonth, oMonth) => {
-    updateCalendar(year.value, nMonth)
+    updateCalendar(-1, -1, year.value, nMonth)
   })
 
-  function hello() {
-    console.log("hello");
+  function onSelect(date, index) {
+    updateCalendar(index, index + 3, year.value, month.value)
+  }
+
+  function onUnselect() {
+    updateCalendar(-1, -1, year.value, month.value)
   }
 </script>
 
