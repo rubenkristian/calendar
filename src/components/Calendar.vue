@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-  import { reactive, ref, toRefs, watch } from 'vue';
+  import { onMounted, reactive, ref, toRefs, watch } from 'vue';
   import Days from './Days.vue';
 
   const days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -29,53 +29,47 @@
 
   const { month, year } = toRefs(props);
 
-  const today = new Date();
-  const first_date = new Date(year.value, month.value - 1, 1);
-  const last_date = new Date(year.value, month.value, 0);
-  count_week = Math.ceil((last_date.getDate() + first_date.getDay() - 1) / 7);
-  first_monday = first_date.getDay() - 1
-
-  let week_days = [];
-  for (let i = 0 - (first_date.getDay() - 1); i < (last_date.getDate()); i++) {
-    if (week_days.length === 7) {
-      date_list.push(week_days);
-      week_days = [];
-    }
-    week_days.push({
-      thisMonth: i >= 0,
-      text: (i + 1),
-      today: today.getDate() === (i + 1) && today.getMonth() === (month.value - 1),
-      previousDay: today.getDate() <= (i + 1) && today.getMonth() <= (month.value - 1) && today.getFullYear() <= year.value,
-    })
-  }
-
-  date_list.push(week_days)
-
-  watch(month, async (nMonth, oMonth) => {
+  function updateCalendar(year, month) {
     date_list.splice(0, date_list.length);
     const today = new Date();
-    const first_date = new Date(year.value, nMonth - 1, 1);
-    const last_date = new Date(year.value, nMonth, 0);
-    count_week = Math.ceil((last_date.getDate() + first_date.getDay() - 1) / 7)
-    first_monday = first_date.getDay() - 1
+    const first_date_current = new Date(year, month - 1, 1);
+    const first_date_next = new Date(year, month, 0);
 
-    let i = first_date.getDay() == 0 ? -6 : (0 - (first_date.getDay() - 1))
+    const day_first_date_current = first_date_current.getDay() === 0 ? 6 : first_date_current.getDay() - 1;
+    const day_first_date_next = first_date_next.getDay() === 0 ? 6 : first_date_next.getDay() - 1;
+    const start_date = new Date(year, month - 1, -(day_first_date_current - 1));
+    const end_date = new Date(year, month, (6 - day_first_date_next))
 
     let week_days = [];
-    for (; i < (last_date.getDate()); i++) {
+    let date = start_date;
+    let a = 0;
+
+    while (date.getTime() < end_date.getTime()) {
+      date = new Date(year, month - 1, (-(day_first_date_current - 1) + a));
+      
       if (week_days.length === 7) {
         date_list.push(week_days);
         week_days = [];
       }
+      
       week_days.push({
-        thisMonth: i >= 0,
-        text: (i + 1),
-        today: today.getDate() === (i + 1) && today.getMonth() === (nMonth - 1),
-        previousDay: today.getDate() <= (i + 1) && today.getMonth() <= (nMonth - 1) && today.getFullYear() <= year.value,
+        thisMonth: date.getMonth() === month - 1,
+        text: date.getDate(),
+        today: today.getDate() === date.getDate() && today.getMonth() === date.getMonth(),
+        previousDay: today.getDate() <= date.getDate() && today.getMonth() <= date.getMonth() && today.getFullYear() <= date.getFullYear(),
       })
+      a++;
     }
-
+    
     date_list.push(week_days)
+  }
+
+  onMounted(() => {
+    updateCalendar(year.value, month.value)
+  })
+
+  watch(month, async (nMonth, oMonth) => {
+    updateCalendar(year.value, nMonth)
   })
 
   function hello() {
